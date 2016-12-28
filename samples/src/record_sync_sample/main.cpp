@@ -48,11 +48,10 @@ int main(int argc, char* argv[]) try
     rs::device* device = context.get_device(0);
 
     //enable required streams
-    device->enable_stream(rs::stream::color, 640, 480, rs::format::rgba8, 30);
-    device->enable_stream(rs::stream::depth, 640, 480, rs::format::z16, 30);
-    device->enable_stream(rs::stream::fisheye, 640, 480, rs::format::raw8, 30);
+    device->enable_stream(rs::stream::color, 320, 240, rs::format::rgb8, 30);
+    device->enable_stream(rs::stream::depth, 320, 240, rs::format::z16, 30);
 
-    vector<rs::stream> streams = { rs::stream::color, rs::stream::depth, rs::stream::fisheye };
+    vector<rs::stream> streams = { rs::stream::color, rs::stream::depth };
 
     for(auto stream : streams)
     {
