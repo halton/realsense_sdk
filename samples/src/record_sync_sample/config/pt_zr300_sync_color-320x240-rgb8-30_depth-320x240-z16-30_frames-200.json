@@ -1,0 +1,15 @@
+{
+  "color": {
+    "width": 320,
+    "height": 240,
+    "format": "rgb8",
+    "framerate": 30
+  },
+  "depth": {
+    "width": 320,
+    "height": 240,
+    "format": "z16",
+    "framerate": 30
+  },
+  "frame_counts": 200
+}

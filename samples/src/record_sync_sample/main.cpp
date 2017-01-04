@@ -3,6 +3,8 @@
 
 #include <memory>
 #include <iostream>
+#include <fstream>
+#include <json/json.h>
 #include <librealsense/rs.hpp>
 
 #include "rs_sdk.h"
@@ -24,16 +26,64 @@ void enable_motion_tracking(rs::device * device)
     device->set_option(rs::option::fisheye_strobe, 1);
 }
 
+rs::format string_to_format(const std::string& format_string)
+{
+    if (format_string == "any")
+        return rs::format::any;
+    if (format_string == "z16")
+        return rs::format::z16;
+    if (format_string == "disparity16")
+        return rs::format::disparity16;
+    if (format_string == "xyz32f")
+        return rs::format::xyz32f;
+    if (format_string == "yuyv")
+        return rs::format::yuyv;
+    if (format_string == "rgb8")
+        return rs::format::rgb8;
+    if (format_string == "bgr8")
+        return rs::format::bgr8;
+    if (format_string == "rgba8")
+        return rs::format::rgba8;
+    if (format_string == "bgra8")
+        return rs::format::bgra8;
+    if (format_string == "y8")
+        return rs::format::y8;
+    if (format_string == "y16")
+        return rs::format::y16;
+    if (format_string == "raw10")
+        return rs::format::raw10;
+    if (format_string == "raw16")
+        return rs::format::raw16;
+    if (format_string == "raw8")
+        return rs::format::raw8;
+
+    return rs::format::any;
+}
+
 int main(int argc, char* argv[]) try
 {
-    if (argc < 2)
+    if (argc < 3)
     {
-        cerr << "missing record file argument" << endl;
+        cerr << "missing record file and camera config argument" << endl;
         return -1;
     }
 
-    const int number_of_frames = 200;
     const string output_file(argv[1]);
+    std::ifstream config(argv[2], std::ifstream::binary);
+
+    Json::Value root;
+    Json::Reader reader;
+    if (!reader.parse(config, root))
+    {
+        cerr  << "Failed to parse configuration\n"
+              << reader.getFormattedErrorMessages();
+        return -1;
+    }
+
+    const int number_of_frames = root.get("frame_counts", 200).asInt();
+    const Json::Value color = root["color"];
+    const Json::Value depth = root["depth"];
+    const Json::Value fisheye = root["fisheye"];
 
     //create a record enabled context with a given output file
     rs::record::context context(output_file.c_str());
@@ -48,11 +98,27 @@ int main(int argc, char* argv[]) try
     rs::device* device = context.get_device(0);
 
     //enable required streams
-    device->enable_stream(rs::stream::color, 640, 480, rs::format::rgba8, 30);
-    device->enable_stream(rs::stream::depth, 640, 480, rs::format::z16, 30);
-    device->enable_stream(rs::stream::fisheye, 640, 480, rs::format::raw8, 30);
+    device->enable_stream(rs::stream::color,
+                          color.get("width", 640).asInt(),
+                          color.get("height", 480).asInt(),
+                          string_to_format(color.get("format", "rgba8").asString()),
+                          color.get("framerate", 30).asInt());
+    device->enable_stream(rs::stream::depth,
+                          depth.get("width", 640).asInt(),
+                          depth.get("height", 480).asInt(),
+                          string_to_format(depth.get("format", "z16").asString()),
+                          depth.get("framerate", 30).asInt());
+    vector<rs::stream> streams = { rs::stream::color, rs::stream::depth };
 
-    vector<rs::stream> streams = { rs::stream::color, rs::stream::depth, rs::stream::fisheye };
+    if (!fisheye.isNull())
+    {
+        device->enable_stream(rs::stream::fisheye,
+                              fisheye.get("width", 640).asInt(),
+                              fisheye.get("height", 480).asInt(),
+                              string_to_format(fisheye.get("format", "raw8").asString()),
+                              fisheye.get("framerate", 30).asInt());
+        streams.push_back(rs::stream::fisheye);
+    }
 
     for(auto stream : streams)
     {

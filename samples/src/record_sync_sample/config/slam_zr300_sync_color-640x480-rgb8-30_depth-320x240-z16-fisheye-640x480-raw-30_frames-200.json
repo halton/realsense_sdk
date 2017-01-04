@@ -1,0 +1,21 @@
+{
+  "color": {
+    "width": 640,
+    "height": 480,
+    "format": "rgb8",
+    "framerate": 30
+  },
+  "depth": {
+    "width": 320,
+    "height": 240,
+    "format": "z16",
+    "framerate": 30
+  },
+  "fisheye": {
+    "width": 640,
+    "height": 480,
+    "format": "raw",
+    "framerate": 30
+  },
+  "frame_counts": 200
+}
